@@ -9,28 +9,40 @@ class BytebankApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: FormularioTransferencia(),
+        body: ListaTransferencias(),
       ),
     );
   }
 }
 
-class ListaTransferencia extends StatelessWidget {
+class ListaTransferencias extends StatelessWidget {
+
+  final List<Transferencia> _transferencias = [];
+
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transferências'),
       ),
-      body: Column(
-        children: [
-          ItemTransferencia(Transferencia(100.0, 1000)),
-          ItemTransferencia(Transferencia(200.0, 2000)),
-          ItemTransferencia(Transferencia(300.0, 3000)),
-        ],
+      body: ListView.builder(
+        itemCount: _transferencias.length,
+        itemBuilder: (context, indice){
+          final transferencia = _transferencias[indice];
+          return ItemTransferencia(transferencia);
+        },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          final Future<Transferencia?> future = Navigator.push(context, MaterialPageRoute(builder: (context){
+              return FormularioTransferencia();
+          }));
+          future.then((transferenciaRecebida){
+            debugPrint('$transferenciaRecebida');
+            _transferencias.add(transferenciaRecebida!);
+          });
+        },
         child: Icon(Icons.add),
       ),
     );
@@ -76,63 +88,53 @@ class FormularioTransferencia extends StatelessWidget {
       appBar: AppBar(title: Text('Criando Transferência')),
       body: Column(
         children: [
-          Editor(_controladorCampoNumeroConta, 'Número da conta', '000', null),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _controladorCampoValor,
-              style: TextStyle(fontSize: 24.0),
-              decoration: InputDecoration(
-                icon: Icon(Icons.monetization_on),
-                labelText: 'Valor',
-                hintText: '0.00',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ),
+          Editor(controlador: _controladorCampoNumeroConta, dica: 'Número da conta', rotulo: '000',),
+          Editor(controlador: _controladorCampoValor, dica: 'Valor',  rotulo:'0.00', icone: Icons.monetization_on,),
           ElevatedButton(
             child: Text('Confirmar'),
-            onPressed: () {
-              print('Clicou no confirmar');
-              final int? numeroConta =
-                  int.tryParse(_controladorCampoNumeroConta.text);
-              final double? valor =
-                  double.tryParse(_controladorCampoValor.text);
-              if (numeroConta != null && valor != null) {
-                final transferenciaCriada = Transferencia(valor, numeroConta);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('$transferenciaCriada'),
-                  ),
-                );
-              }
-            },
+            onPressed: () => _criaTransferencia(context),
           ),
         ],
       ),
     );
   }
+
+  void _criaTransferencia(BuildContext context){
+    final int? numeroConta =
+    int.tryParse(_controladorCampoNumeroConta.text);
+    final double? valor =
+    double.tryParse(_controladorCampoValor.text);
+    if (numeroConta != null && valor != null) {
+      final transferenciaCriada = Transferencia(valor, numeroConta);
+      Navigator.pop(context, transferenciaCriada);
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: const Text('Transferência criada com sucesso')));
+     }
+  }
+
 }
 
-class Editor extends StatelessWidget {
-  final TextEditingController _controlador;
-  final String _rotulo;
-  final String _dica;
-  final IconData _icone;
 
-  Editor(this._controlador, this._rotulo, this._dica, this._icone);
+
+class Editor extends StatelessWidget {
+  final TextEditingController controlador;
+  final String? rotulo;
+  final String? dica;
+  final IconData? icone;
+
+  Editor({required this.controlador, this.rotulo, this.dica, this.icone});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: TextField(
-        controller: _controlador,
+        controller: controlador,
         style: TextStyle(fontSize: 24.0),
         decoration: InputDecoration(
-          icon: Icon(_icone),
-          labelText: _rotulo,
-          hintText: _dica,
+          icon: icone != null ? Icon(icone) : null,
+          labelText: rotulo,
+          hintText: dica,
         ),
         keyboardType: TextInputType.number,
       ),
