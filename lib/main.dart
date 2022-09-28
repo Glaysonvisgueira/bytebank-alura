@@ -8,39 +8,58 @@ class BytebankApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        body: ListaTransferencias(),
+      theme: ThemeData(
+        primaryColor: Colors.green[900],
+       buttonTheme: ButtonThemeData(
+         buttonColor: Colors.blueAccent[700],
+         textTheme: ButtonTextTheme.primary
+       )
       ),
+      home: ListaTransferencias(),
     );
   }
 }
 
-class ListaTransferencias extends StatelessWidget {
+class ListaTransferencias extends StatefulWidget {
 
   final List<Transferencia> _transferencias = [];
 
   @override
-  Widget build(BuildContext context) {
+  State<StatefulWidget> createState() {
+    return ListaTransferenciasState();
+  }
+}
 
+class ListaTransferenciasState extends State<ListaTransferencias>{
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transferências'),
       ),
       body: ListView.builder(
-        itemCount: _transferencias.length,
+        itemCount: widget._transferencias.length,
         itemBuilder: (context, indice){
-          final transferencia = _transferencias[indice];
+          final transferencia = widget._transferencias[indice];
           return ItemTransferencia(transferencia);
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           final Future<Transferencia?> future = Navigator.push(context, MaterialPageRoute(builder: (context){
-              return FormularioTransferencia();
+            return FormularioTransferencia();
           }));
           future.then((transferenciaRecebida){
-            debugPrint('$transferenciaRecebida');
-            _transferencias.add(transferenciaRecebida!);
+
+            if (transferenciaRecebida != null) {
+              setState(() {
+                debugPrint('$transferenciaRecebida');
+                widget._transferencias.add(transferenciaRecebida!);
+              });
+            } else {
+              debugPrint("Não foi recebido a transferência do FormularioTransferencia");
+            }
           });
         },
         child: Icon(Icons.add),
@@ -77,24 +96,36 @@ class Transferencia {
   }
 }
 
-class FormularioTransferencia extends StatelessWidget {
+class FormularioTransferencia extends StatefulWidget {
+
+  @override
+  State<StatefulWidget> createState() {
+   return FormularioTransferenciaState();
+  }
+
+}
+
+class FormularioTransferenciaState extends State<FormularioTransferencia>{
+
   final TextEditingController _controladorCampoNumeroConta =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _controladorCampoValor = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Criando Transferência')),
-      body: Column(
-        children: [
-          Editor(controlador: _controladorCampoNumeroConta, dica: 'Número da conta', rotulo: '000',),
-          Editor(controlador: _controladorCampoValor, dica: 'Valor',  rotulo:'0.00', icone: Icons.monetization_on,),
-          ElevatedButton(
-            child: Text('Confirmar'),
-            onPressed: () => _criaTransferencia(context),
-          ),
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Editor(controlador: _controladorCampoNumeroConta, dica: 'Número da conta', rotulo: '000',),
+            Editor(controlador: _controladorCampoValor, dica: 'Valor',  rotulo:'0.00', icone: Icons.monetization_on,),
+            ElevatedButton(
+              child: Text('Confirmar'),
+              onPressed: () => _criaTransferencia(context),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -109,9 +140,8 @@ class FormularioTransferencia extends StatelessWidget {
       Navigator.pop(context, transferenciaCriada);
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: const Text('Transferência criada com sucesso')));
-     }
+    }
   }
-
 }
 
 
